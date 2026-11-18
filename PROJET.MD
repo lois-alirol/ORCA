@@ -31,13 +31,7 @@ Categorie (id, nom, description) *(catégorie du plat : épicé, vegan…)*
 
 Allergène (id, nom)
 
-Restaurant (id, nom, adresse, description, image)
-
 **Les relations** : 
-
-Une carte appartient à un restaurant (1 \- 1\)
-
-Un restaurant a plusieurs cartes (1 \- N)
 
 La carte contient plusieurs plats (1 \- N)
 
@@ -52,8 +46,6 @@ Les plats ont aucun ou plusieurs allergènes (N \- N)
 **Le contenu du seed** (D4) :
 
 Utilisateur(0, “John”, “johndoe@mail.com”, 1234, admin)
-
-Restaurant(0, “Pit’s Saloon”, “1128 E Pit’s Rd, Pitsville, AZ 85283”, “restaurant sympathique.”, “pit\_saloon.png”)
 
 Carte(0, “Carte d’été”, “Carte composée de plat estivales”, 25/6/2026)
 
