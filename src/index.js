@@ -15,6 +15,8 @@ app.get("/", (req, res) => {
     res.render("index");
 })
 
+app.use(express.static("public"));
+
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`);
 })
