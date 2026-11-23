@@ -1,6 +1,8 @@
 const express = require("express");
 const db = require("../db");
 
+const { dishesTable } = require("../db/schema");
+
 const app = express();
 const PORT = 3008;
 
@@ -15,6 +17,13 @@ app.get("/", (req, res) => {
     res.render("index");
 })
 
+app.get("/dishes",async (req, res) => {
+
+    const dishes = await db.select().from(dishesTable);
+    res.render("Dishes/dishes", {
+        dishes,
+    });
+})
 app.use(express.static("public"));
 
 app.listen(PORT, () => {
