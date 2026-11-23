@@ -1,8 +1,9 @@
 <h1>Dishes : </h1>
+<a href="dishes/add">Ajouter</a>
 <ul>
     {{#each dishes}}
         <li>
-            <h3>{{name}}</h3> <p>{{description}}</p>
+            <h3>{{name}}</h3> <p>{{description}}</p><p>{{price}}</p><button id="Delete">Delete</button>
         </li>
     {{/each}}
 </ul>
