@@ -1,5 +1,5 @@
-const { randomBytes, scryptSync } = require("node:crypto");
 const db = require("./index");
+
 const {
     usersTable,
     menusTable,
@@ -12,11 +12,7 @@ const {
     dishAllergensTable,
 } = require("./schema.js");
 
-function hashPassword(password) {
-    const salt = randomBytes(16);
-    const derivedKey = scryptSync(password, salt, 64);
-    return `scrypt$${salt.toString("hex")}$${derivedKey.toString("hex")}`;
-}
+const hashPassword = require("../src/util/password");
 
 async function seed () {
     await db.transaction(async (tx) => {
@@ -124,4 +120,20 @@ async function seed () {
     });
 }
 
-seed().then(() => { console.log("Base de données remplie") });
+async function resetDatabase() {
+    await db.delete(dishImagesTable);
+    await db.delete(dishCategoriesTable);
+    await db.delete(dishAllergensTable);
+    await db.delete(menuDishesTable);
+
+    await db.delete(dishesTable);
+    await db.delete(categoriesTable);
+    await db.delete(allergensTable);
+    await db.delete(usersTable);
+
+    await seed();
+
+    console.log("Base de données remplie");
+}
+
+resetDatabase();

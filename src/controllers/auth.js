@@ -8,15 +8,19 @@ const db = require('../../db');
 const {usersTable} = require("../../db/schema");
 const {eq} = require("drizzle-orm");
 
+// on configure passport.js pour utiliser une connexion avec email et mot de passe
 passport.use(
     new LocalStrategy(
+        // le champ mail du formulaire remplace le champ username par défaut
         { usernameField: "email" },
-        function verify(email, password, cb) {
-            let row;
+
+        // executée lors d'une tentative de connexion
+        async function verify(email, password, cb) {
+            let user;
 
             try {
-                row = db
-                    .select()
+                // on cherche l'utilisateur depuis la bdd (ca explique la fonction asynchrone)
+                user = await db.select()
                     .from(usersTable)
                     .where(eq(usersTable.email, email))
                     .get();
@@ -24,35 +28,33 @@ passport.use(
                 return cb(err);
             }
 
-            if (!row) {
-                return cb(null, false, {message: "Incorrect username or password.",});
+            // pas de user trouvé
+            if (!user) {
+                return cb(null, false);
             }
 
-            const [saltHex, hashHex] = row.passwordHash.split("$");
+            // On récupère le sel (morceau aléatoire pour ne pas qu'un dictionnaire de hashage
+            // puisse trouver notre mdp et le hash du mot de passe enregistré
+            const [algo, salt, storedHash] = user.passwordHash.split("$");
 
-            crypto.scrypt(
-                password,
-                Buffer.from(saltHex, "hex"),
-                64,
-                function (err, hashedPassword) {
-                    if (err) return cb(err);
+            // on chiffre le mdp envoyé depuis le formulaire avec le meme sel que le mot de passe enregistré
+            crypto.scrypt(password, Buffer.from(salt, "hex"), 64, (err, hash) => {
+                // erreur pdt le chifrrement
+                if (err) return cb(err);
 
-                    const storedHash = Buffer.from(hashHex, "hex");
+                // hash du mot de passe stocké différent de celui hashé a l'instant
+                if (!crypto.timingSafeEqual(Buffer.from(storedHash, "hex"), hash)) {
+                    return cb(null, false);
+                }
 
-                    if (!crypto.timingSafeEqual(storedHash, hashedPassword)) {
-                        return cb(null, false, {
-                            message: "Incorrect username or password.",
-                        });
-                    }
-
-                    return cb(null, {
-                        id: row.id,
-                        name: row.name,
-                        email: row.email,
-                        role: row.role,
-                    });
-                },
-            );
+                // email et mdp correcte, on renvoie les infos de l'utilisateurs
+                return cb(null, {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                });
+            });
         },
     ),
 );
@@ -65,5 +67,20 @@ router.post('/sign-in', passport.authenticate('local', {
     successRedirect: '/',
     failureRedirect: '/auth/sign-in'
 }));
+
+// définit les informations de l'utilisateur à enregistrer dans la session
+passport.serializeUser(function(user, cb) {
+    process.nextTick(function() {
+        // On enregistre uniquement l'id et le username de l'utilisateur
+        cb(null, { id: user.id, username: user.username });
+    });
+});
+
+// Récupère les informations de l'utilisateur depuis la session
+passport.deserializeUser(function(user, cb) {
+    process.nextTick(function() {
+        return cb(null, user);
+    });
+});
 
 module.exports = router;
